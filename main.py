@@ -296,6 +296,12 @@ def _build_paid_routes(catalog: list[dict]) -> dict[str, RouteConfig]:
 
 routes = _build_paid_routes(ENDPOINT_CATALOG)
 app.add_middleware(PaymentMiddlewareASGI, routes=routes, server=server)
+# Outer middleware that polishes 402 responses to match the x402 spec:
+# JSON payload in body, https:// in resource.url (Fly TLS proxy fix),
+# CORS headers, and an x-payment-required v1 fallback. Must be
+# registered AFTER PaymentMiddlewareASGI so it wraps it.
+from x402_polish import X402ResponsePolish  # noqa: E402
+app.add_middleware(X402ResponsePolish)
 
 # ── Shared HTTP client ──────────────────────────────────────────────
 

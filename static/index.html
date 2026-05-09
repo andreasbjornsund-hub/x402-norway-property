@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Norwegian Property &amp; Address — x402 agent</title>
+<meta name="description" content="Address search, reverse geocoding, place names, elevation, and cadastral data from Kartverket. Pay per query with USDC via x402.">
+<meta property="og:title" content="Norwegian Property &amp; Address">
+<meta property="og:description" content="Pay-per-query Kartverket data for AI agents.">
+<meta property="og:type" content="website">
+<style>
+  :root { --bg: #0b0d10; --panel: #14181c; --panel-2: #1c2127;
+    --fg: #e6edf3; --muted: #8b949e;
+    --accent: #79c0ff; --accent-2: #a5d6ff; --good: #56d364;
+    --line: #30363d; --code-bg: #0d1117; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    line-height: 1.55; font-size: 16px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { color: var(--accent-2); text-decoration: underline; }
+  main { max-width: 880px; margin: 0 auto; padding: 4rem 1.25rem 6rem; }
+  h1 { font-size: 2.25rem; margin: 0 0 0.4rem;
+    background: linear-gradient(90deg,#79c0ff 0%,#a5d6ff 50%,#d2a8ff 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  h2 { font-size: 1.15rem; margin: 2.5rem 0 1rem; color: var(--accent); font-weight: 600; }
+  p.tagline { color: var(--muted); font-size: 1.1rem; margin: 0 0 1.5rem; }
+  .badges { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .badge { background: var(--panel-2); border: 1px solid var(--line);
+    padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.8rem; color: var(--muted); }
+  .badge strong { color: var(--fg); }
+  table { width: 100%; border-collapse: collapse; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  th, td { padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  th { background: var(--panel-2); font-weight: 600; font-size: 0.82rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  tr:last-child td { border-bottom: none; }
+  td.path code { color: var(--accent); }
+  td.price { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  td.price.free { color: var(--muted); }
+  td.price.paid { color: var(--good); }
+  pre, code { font-family: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace; font-size: 0.875rem; }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 1rem; overflow-x: auto; }
+  code { background: var(--panel-2); padding: 0.1em 0.4em; border-radius: 4px; }
+  pre code { background: transparent; padding: 0; }
+  .step { display: flex; gap: 1rem; align-items: flex-start; padding: 0.75rem 0; }
+  .step .n { flex: 0 0 1.75rem; height: 1.75rem; border-radius: 50%;
+    background: var(--panel-2); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent); font-weight: 600; font-size: 0.9rem; }
+  .step p { margin: 0; padding-top: 0.15rem; }
+  footer { margin-top: 5rem; padding-top: 2rem; border-top: 1px solid var(--line);
+    color: var(--muted); font-size: 0.9rem;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+  .pill { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px;
+    background: rgba(86,211,100,0.12); color: var(--good);
+    border: 1px solid rgba(86,211,100,0.3);
+    font-size: 0.78rem; font-weight: 500; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Norwegian Property &amp; Address</h1>
+    <p class="tagline">Address search, reverse geocoding, place names, elevation, and cadastral data — all from Kartverket. Built for AI agents.</p>
+    <div class="badges">
+      <span class="badge"><strong>x402</strong> micropayments</span>
+      <span class="badge"><strong>USDC</strong> on Base</span>
+      <span class="badge">Kartverket</span>
+      <span class="badge">No API key</span>
+    </div>
+  </header>
+
+  <h2>Endpoints</h2>
+  <table>
+    <thead><tr><th>Method</th><th>Path</th><th>Price</th><th>What you get</th></tr></thead>
+    <tbody>
+      <tr><td>GET</td><td class="path"><code>/address?q</code></td><td class="price paid">$0.005</td><td>Free-text address search (top 10)</td></tr>
+      <tr><td>GET</td><td class="path"><code>/address/reverse</code></td><td class="price paid">$0.005</td><td>Reverse geocode coords → nearest address</td></tr>
+      <tr><td>GET</td><td class="path"><code>/place?name</code></td><td class="price paid">$0.005</td><td>Place names — cities, mountains, lakes</td></tr>
+      <tr><td>GET</td><td class="path"><code>/elevation?lat&amp;lon</code></td><td class="price paid">$0.005</td><td>Elevation at point (Kartverket DTM)</td></tr>
+      <tr><td>GET</td><td class="path"><code>/distance</code></td><td class="price paid">$0.005</td><td>Haversine distance + bearing</td></tr>
+      <tr><td>GET</td><td class="path"><code>/property?knr&amp;gnr&amp;bnr</code></td><td class="price paid">$0.01</td><td>Cadastral lookup by matrikkel number</td></tr>
+      <tr><td>GET</td><td class="path"><code>/municipalities</code></td><td class="price free">free</td><td>Municipality codes</td></tr>
+      <tr><td>GET</td><td class="path"><code>/health</code></td><td class="price free">free</td><td>Health check</td></tr>
+      <tr><td>GET</td><td class="path"><code>/.well-known/x402.json</code></td><td class="price free">free</td><td>Agent-discovery manifest</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Example</h2>
+  <pre><code>$ curl 'https://x402-norway-property.fly.dev/address?q=Karl+Johans+gate+1'
+
+{
+  "results": [
+    {
+      "address": "Karl Johans gate 1",
+      "postal_code": "0154",
+      "city": "OSLO",
+      "municipality": "Oslo",
+      "lat": 59.9114,
+      "lon": 10.7349
+    }
+  ],
+  "total": 1
+}</code></pre>
+
+  <h2>How it works</h2>
+  <div class="step"><div class="n">1</div><p>Your agent calls a paid endpoint without payment headers.</p></div>
+  <div class="step"><div class="n">2</div><p>Server responds <code>402 Payment Required</code> with the price (in USDC) and the <code>payTo</code> address.</p></div>
+  <div class="step"><div class="n">3</div><p>Agent signs an <a href="https://eips.ethereum.org/EIPS/eip-3009">EIP-3009</a> <code>transferWithAuthorization</code> and re-sends with <code>X-PAYMENT</code>.</p></div>
+  <div class="step"><div class="n">4</div><p>Facilitator settles on Base. Server returns the data.</p></div>
+
+  <h2>Source &amp; freshness</h2>
+  <p>All data comes from <a href="https://ws.geonorge.no" rel="noopener">Kartverket / Geonorge</a> — addresses, place names, elevation, cadastral. We respect their fair-use policy (10 concurrent max). Address and place caches: 7 days. Elevation: 30 days. Each response carries <code>X-Cache: HIT|MISS</code>.</p>
+  <p>Coverage: lat 55–81°N, lon –10 to 35°E. Coordinates outside this box are rejected with 400.</p>
+
+  <footer>
+    <span><span class="pill">x402</span> &nbsp;Part of <a href="http://x402agent.no">x402agent.no</a></span>
+    <span>Data: <a href="https://www.kartverket.no">Kartverket</a> · CC BY 4.0</span>
+  </footer>
+</main>
+</body>
+</html>

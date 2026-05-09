@@ -1,0 +1,23 @@
+# REPLACE 'app' with your agent's name (e.g. 'x402-norwegian-weather').
+# Then run: flyctl launch --no-deploy --copy-config to register the app.
+app = 'x402-agent-template'
+primary_region = 'ams'
+
+[build]
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0  # scale to zero — idle agents cost ~$0
+
+  [http_service.concurrency]
+    type = 'requests'
+    hard_limit = 25
+    soft_limit = 15
+
+[[vm]]
+  memory = '256mb'
+  cpu_kind = 'shared'
+  cpus = 1

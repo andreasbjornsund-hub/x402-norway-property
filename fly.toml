@@ -1,6 +1,4 @@
-# REPLACE 'app' with your agent's name (e.g. 'x402-norwegian-weather').
-# Then run: flyctl launch --no-deploy --copy-config to register the app.
-app = 'x402-agent-template'
+app = 'x402-norway-property'
 primary_region = 'ams'
 
 [build]

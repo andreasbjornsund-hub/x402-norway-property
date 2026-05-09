@@ -1,7 +1,7 @@
 [project]
-name = "x402-agent-template"
+name = "x402-norway-property"
 version = "0.1.0"
-description = "x402 micropayment agent — replace this description"
+description = "Norwegian Property & Address x402 API (Kartverket / Geonorge)"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",

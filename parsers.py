@@ -129,29 +129,42 @@ def parse_elevation(data: dict, lat: float, lon: float) -> dict:
     }
 
 
-def parse_property(data: dict, knr: str, gnr: int, bnr: int) -> dict:
-    """Kartverket /eiendomsinfo/v1/eiendom response — defensive parse.
+def parse_property(data: dict, knr: str, gnr: int, bnr: int) -> dict | None:
+    """Kartverket /eiendom/v1/geokoding GeoJSON FeatureCollection → flat dict.
 
-    The cadastral API's exact shape varies; we surface what's commonly
-    available and tolerate missing fields.
+    Returns None when there are no features — the caller should map that to
+    a 404 (so the x402 SDK skips settlement and the user isn't charged).
+
+    The new API returns less than the old /eiendomsinfo/v1/eiendom: no
+    address, no area, no property type. Those fields aren't surfaced here.
+    Coordinates are point-of-representation (typically the parcel centroid).
+    A property may have several `Teig` features (multiple parcels under one
+    matrikkel) — we surface the one with `hovedområde=true` if present,
+    else features[0].
     """
-    if not isinstance(data, dict) or not data:
-        return {"municipality_code": knr, "gnr": gnr, "bnr": bnr}
-    # Some responses return a list of matching eiendommer.
-    rows = data.get("eiendommer") or data.get("eiendomsinformasjoner") or [data]
-    if not rows:
-        return {"municipality_code": knr, "gnr": gnr, "bnr": bnr}
-    r = rows[0] if isinstance(rows, list) else rows
-    rep = r.get("representasjonspunkt") or r.get("punkt") or {}
-    lat, lon = _coord(rep)
+    if not isinstance(data, dict):
+        return None
+    features = data.get("features") or []
+    if not features:
+        return None
+    # Prefer the hovedområde (main parcel) when multiple features exist.
+    primary = next((f for f in features if (f.get("properties") or {}).get("hovedområde")), features[0])
+    props = primary.get("properties") or {}
+    geom = primary.get("geometry") or {}
+    coords = geom.get("coordinates") or []
+    lat = coords[1] if len(coords) > 1 else None
+    lon = coords[0] if len(coords) > 0 else None
     return {
-        "municipality_code": knr,
-        "municipality": r.get("kommunenavn", ""),
-        "gnr": gnr,
-        "bnr": bnr,
-        "area_sqm": r.get("areal", r.get("bruttoareal")),
-        "property_type": r.get("eiendomstype", r.get("type", "")),
-        "address": r.get("adressetekst", ""),
+        "municipality_code": props.get("kommunenummer", knr),
+        "gnr": props.get("gardsnummer", gnr),
+        "bnr": props.get("bruksnummer", bnr),
+        "festenummer": props.get("festenummer", 0),
+        "seksjonsnummer": props.get("seksjonsnummer", 0),
+        "matrikkelnummer": props.get("matrikkelnummertekst", f"{gnr}/{bnr}"),
+        "lokalid": props.get("lokalid"),
+        "object_type": props.get("objekttype", ""),
+        "updated_at": props.get("oppdateringsdato", ""),
+        "is_primary_parcel": bool(props.get("hovedområde")),
         "lat": lat,
         "lon": lon,
     }

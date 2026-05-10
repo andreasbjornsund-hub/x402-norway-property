@@ -9,8 +9,11 @@ APIs (all free, no auth, JSON):
                   /navn?sok=<query>&utkoordsys=4326&treffPerSide=N
   - Elevation:    https://ws.geonorge.no/hoydedata/v1/
                   /punkt?nord=<lat>&ost=<lon>&koordsys=4258
-  - Property:     https://ws.geonorge.no/eiendomsinfo/v1/eiendom
-                  ?kommunenr=<knr>&gaardsnr=<gnr>&bruksnr=<bnr>
+  - Property:     https://ws.geonorge.no/eiendom/v1/geokoding
+                  ?kommunenummer=<knr>&gardsnummer=<gnr>&bruksnummer=<bnr>
+                  Returns GeoJSON FeatureCollection. The previous
+                  /eiendomsinfo/v1/eiendom endpoint was decommissioned
+                  in 2026 (returned 403 globally).
 
 `utkoordsys=4326` and `koordsys=4258` both yield WGS84 / ETRS89 lat/lon
 coordinates suitable for downstream display.
@@ -30,7 +33,7 @@ USER_AGENT = "x402agent-norway-property/1.0 github.com/andreasbjornsund-hub"
 ADDR_BASE = "https://ws.geonorge.no/adresser/v1"
 PLACE_BASE = "https://ws.geonorge.no/stedsnavn/v1"
 ELEVATION_BASE = "https://ws.geonorge.no/hoydedata/v1"
-PROPERTY_BASE = "https://ws.geonorge.no/eiendomsinfo/v1"
+PROPERTY_BASE = "https://ws.geonorge.no/eiendom/v1"
 
 _SEM = asyncio.Semaphore(10)
 
@@ -107,11 +110,15 @@ async def elevation(client: httpx.AsyncClient, lat: float, lon: float, ttl: floa
 
 
 async def property_lookup(client: httpx.AsyncClient, knr: str, gnr: int, bnr: int, ttl: float = 7 * 86400.0):
-    """Cadastral lookup by (kommunenummer, gårdsnummer, bruksnummer)."""
+    """Cadastral lookup by (kommunenummer, gårdsnummer, bruksnummer).
+
+    Returns a GeoJSON FeatureCollection. Empty `features` means no such
+    property — caller should treat as 404.
+    """
     return await _get(
         client,
-        f"{PROPERTY_BASE}/eiendom",
-        {"kommunenr": knr, "gaardsnr": gnr, "bruksnr": bnr},
+        f"{PROPERTY_BASE}/geokoding",
+        {"kommunenummer": knr, "gardsnummer": gnr, "bruksnummer": bnr},
         ttl,
         key_extra="property",
     )

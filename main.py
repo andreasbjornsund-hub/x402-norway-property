@@ -245,15 +245,17 @@ ENDPOINT_CATALOG: list[dict] = [
         "method": "GET",
         "path": "/property",
         "route_pattern": "GET /property",
-        "description": "Cadastral property lookup by (kommunenummer, gårdsnummer, bruksnummer).",
+        "description": "Cadastral property lookup by (kommunenummer, gårdsnummer, bruksnummer). Returns matrikkel ID + representative coordinates.",
         "price_usd": "$0.01",
         "amount_atomic": "10000",
-        "query_params": {"knr": "0301", "gnr": 208, "bnr": 350},
+        "query_params": {"knr": "5001", "gnr": 315, "bnr": 53},
         "path_params": {},
         "output_example": {
-            "municipality_code": "0301", "municipality": "Oslo",
-            "gnr": 208, "bnr": 350, "area_sqm": 1250, "property_type": "Bolig",
-            "address": "Exampleveien 1", "lat": 59.92, "lon": 10.75,
+            "municipality_code": "5001", "municipality": "Trondheim", "county": "Trøndelag",
+            "gnr": 315, "bnr": 53, "festenummer": 0, "seksjonsnummer": 0,
+            "matrikkelnummer": "315/53", "lokalid": 278936478,
+            "object_type": "Teig", "updated_at": "2020-06-16T07:12:12",
+            "is_primary_parcel": True, "lat": 63.35266, "lon": 10.36802,
         },
     },
     {"method": "GET", "path": "/municipalities", "route_pattern": None,
@@ -553,8 +555,17 @@ async def property_endpoint(
         if e.status_code == 404:
             raise HTTPException(404, f"No property found for {knr}/{gnr}/{bnr}")
         raise HTTPException(503, f"Kartverket upstream: {e.message}")
+    parsed = parsers.parse_property(data, knr, gnr, bnr)
+    if parsed is None:
+        raise HTTPException(404, f"No property found for {knr}/{gnr}/{bnr}")
+    # Enrich with municipality name from the local table when known.
+    resolved = municipalities.lookup(parsed["municipality_code"])
+    if resolved:
+        name, _, county = resolved
+        parsed["municipality"] = name.title()
+        parsed["county"] = county
     _set_cache_header(response, hit)
-    return parsers.parse_property(data, knr, gnr, bnr)
+    return parsed
 
 
 # ── Static files ────────────────────────────────────────────────────

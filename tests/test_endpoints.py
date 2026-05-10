@@ -136,27 +136,48 @@ async def test_distance_endpoint_no_upstream_call(main_module, fake_kv):
     assert len(fake_kv.calls) == 0
 
 
+def _geokoding_feature(knr="5001", gnr=315, bnr=53, lat=63.35266, lon=10.36802):
+    return {"type": "FeatureCollection", "features": [{
+        "type": "Feature",
+        "geometry": {"type": "Point", "coordinates": [lon, lat]},
+        "properties": {
+            "kommunenummer": knr, "gardsnummer": gnr, "bruksnummer": bnr,
+            "festenummer": 0, "seksjonsnummer": 0,
+            "matrikkelnummertekst": f"{gnr}/{bnr}", "lokalid": 278936478,
+            "objekttype": "Teig", "oppdateringsdato": "2020-06-16T07:12:12",
+            "hovedområde": True,
+        },
+    }]}
+
+
 async def test_property_happy_path(main_module, fake_kv):
-    fake_kv.stub("/eiendomsinfo/v1/eiendom", 200, {"eiendommer": [{
-        "kommunenavn": "Oslo", "areal": 1250, "eiendomstype": "Bolig",
-        "adressetekst": "Exampleveien 1",
-        "representasjonspunkt": {"lat": 59.92, "lon": 10.75},
-    }]})
-    out = await main_module.property_endpoint(response=Response(), knr="0301", gnr=208, bnr=350)
-    assert out["municipality"] == "Oslo"
-    assert out["area_sqm"] == 1250
+    fake_kv.stub("/eiendom/v1/geokoding", 200, _geokoding_feature())
+    out = await main_module.property_endpoint(response=Response(), knr="5001", gnr=315, bnr=53)
+    assert out["municipality"] == "Trondheim"  # enriched from local table
+    assert out["county"] == "Trøndelag"
+    assert out["matrikkelnummer"] == "315/53"
+    assert out["lokalid"] == 278936478
+    assert out["lat"] == 63.35266
+    assert out["is_primary_parcel"] is True
 
 
 async def test_property_zero_pads_short_knr(main_module, fake_kv):
-    fake_kv.stub("/eiendomsinfo/v1/eiendom", 200, {"eiendommer": [{}]})
+    fake_kv.stub("/eiendom/v1/geokoding", 200, _geokoding_feature(knr="0301", gnr=1, bnr=1))
     await main_module.property_endpoint(response=Response(), knr="301", gnr=1, bnr=1)
-    # Verify the call used 4-digit kommunenr
     sent_params = fake_kv.calls[-1][1]
-    assert sent_params.get("kommunenr") == "0301"
+    assert sent_params.get("kommunenummer") == "0301"
 
 
 async def test_property_404_when_upstream_404(main_module, fake_kv):
-    fake_kv.stub("/eiendomsinfo/v1/eiendom", 404)
+    fake_kv.stub("/eiendom/v1/geokoding", 404)
+    with pytest.raises(HTTPException) as exc:
+        await main_module.property_endpoint(response=Response(), knr="0301", gnr=999, bnr=999)
+    assert exc.value.status_code == 404
+
+
+async def test_property_404_on_empty_features(main_module, fake_kv):
+    """Empty features collection means no such property — must 404 so x402 doesn't settle."""
+    fake_kv.stub("/eiendom/v1/geokoding", 200, {"type": "FeatureCollection", "features": []})
     with pytest.raises(HTTPException) as exc:
         await main_module.property_endpoint(response=Response(), knr="0301", gnr=999, bnr=999)
     assert exc.value.status_code == 404

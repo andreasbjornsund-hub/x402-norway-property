@@ -70,6 +70,14 @@ async def test_address_search_503_on_upstream(main_module, fake_kv):
     assert exc.value.status_code == 503
 
 
+async def test_address_search_404_on_empty_results(main_module, fake_kv):
+    """x402 SDK skips settle on 4xx — empty results must 404 not 200."""
+    fake_kv.stub("/adresser/v1/sok", 200, {"metadata": {"totaltAntallTreff": 0}, "adresser": []})
+    with pytest.raises(HTTPException) as exc:
+        await main_module.address_search(response=Response(), q="zzz-no-match", limit=10)
+    assert exc.value.status_code == 404
+
+
 async def test_address_reverse_rejects_out_of_norway(main_module):
     with pytest.raises(HTTPException) as exc:
         await main_module.address_reverse(response=Response(), lat=48.85, lon=2.35, radius_m=200)
@@ -96,6 +104,13 @@ async def test_place_search_happy_path(main_module, fake_kv):
     out = await main_module.place_search(response=Response(), name="galdh", limit=10)
     assert out["results"][0]["name"] == "Galdhøpiggen"
     assert out["results"][0]["type"] == "Fjelltopp"
+
+
+async def test_place_search_404_on_empty_results(main_module, fake_kv):
+    fake_kv.stub("/stedsnavn/v1/navn", 200, {"metadata": {"totaltAntallTreff": 0}, "navn": []})
+    with pytest.raises(HTTPException) as exc:
+        await main_module.place_search(response=Response(), name="zzz-no-place", limit=10)
+    assert exc.value.status_code == 404
 
 
 async def test_elevation_happy_path(main_module, fake_kv):

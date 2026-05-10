@@ -456,8 +456,12 @@ async def address_search(
         data, hit = await kv.address_search(_http, q, limit=limit, ttl=TTL_ADDR)
     except KartverketError as e:
         raise HTTPException(503, f"Kartverket upstream: {e.message}")
+    parsed = parsers.parse_address_search(data, limit=limit)
+    if not parsed.get("results"):
+        # 4xx so x402 SDK skips settle — no charge for empty results
+        raise HTTPException(404, f"No addresses match '{q}'")
     _set_cache_header(response, hit)
-    return parsers.parse_address_search(data, limit=limit)
+    return parsed
 
 
 @app.get("/address/reverse")
@@ -489,8 +493,12 @@ async def place_search(
         data, hit = await kv.place_search(_http, name, limit=limit, ttl=TTL_PLACE)
     except KartverketError as e:
         raise HTTPException(503, f"Kartverket upstream: {e.message}")
+    parsed = parsers.parse_place_search(data, limit=limit)
+    if not parsed.get("results"):
+        # 4xx so x402 SDK skips settle — no charge for empty results
+        raise HTTPException(404, f"No place names match '{name}'")
     _set_cache_header(response, hit)
-    return parsers.parse_place_search(data, limit=limit)
+    return parsed
 
 
 @app.get("/elevation")
